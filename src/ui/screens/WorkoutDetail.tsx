@@ -7,11 +7,12 @@ interface Props {
   workout: Workout
   ftp?: number
   onStart: () => void
+  onEdit: () => void
   onBack: () => void
   onSettings: () => void
 }
 
-export function WorkoutDetail({ workout, ftp, onStart, onBack, onSettings }: Props) {
+export function WorkoutDetail({ workout, ftp, onStart, onEdit, onBack, onSettings }: Props) {
   const { ready } = useTrainer()
   const canStart = ready && ftp !== undefined
 
@@ -20,7 +21,12 @@ export function WorkoutDetail({ workout, ftp, onStart, onBack, onSettings }: Pro
       <button className="btn btn-ghost back" onClick={onBack}>
         ← Workouts
       </button>
-      <h1>{workout.name}</h1>
+      <div className="title-row">
+        <h1>{workout.name}</h1>
+        <button className="btn btn-secondary" onClick={onEdit}>
+          Edit
+        </button>
+      </div>
       <p className="muted">
         {formatDuration(totalDuration(workout))}
         {workout.author ? ` · ${workout.author}` : ''}

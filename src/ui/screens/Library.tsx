@@ -1,11 +1,13 @@
 import { useState, type DragEvent } from 'react'
 import type { SavedWorkout } from '../../storage/workouts'
-import { formatDuration, parseZwo, totalDuration, type Workout } from '../../workout'
+import { formatDuration, parseZwo, totalDuration } from '../../workout'
 import sampleXml from '../sample-workout.zwo?raw'
 
 interface Props {
   workouts: SavedWorkout[]
-  onImport: (workouts: Workout[]) => Promise<void>
+  /** Contents of `.zwo` files, already validated. */
+  onImport: (files: string[]) => Promise<void>
+  onCreate: () => void
   onOpen: (id: string) => void
   onDelete: (id: string) => void
 }
@@ -15,17 +17,19 @@ interface ImportMessage {
   text: string
 }
 
-export function Library({ workouts, onImport, onOpen, onDelete }: Props) {
+export function Library({ workouts, onImport, onCreate, onOpen, onDelete }: Props) {
   const [dragging, setDragging] = useState(false)
   const [messages, setMessages] = useState<ImportMessage[]>([])
 
   const importFiles = async (files: File[]) => {
-    const parsed: Workout[] = []
+    const valid: string[] = []
     const out: ImportMessage[] = []
     for (const file of files) {
       try {
         const warnings: string[] = []
-        parsed.push(parseZwo(await file.text(), { onWarning: (w) => warnings.push(w) }))
+        const xml = await file.text()
+        parseZwo(xml, { onWarning: (w) => warnings.push(w) })
+        valid.push(xml)
         out.push({ kind: 'ok', text: `Imported ${file.name}.` })
         for (const w of warnings) out.push({ kind: 'warn', text: `${file.name}: ${w}` })
       } catch (error) {
@@ -36,7 +40,7 @@ export function Library({ workouts, onImport, onOpen, onDelete }: Props) {
       }
     }
     setMessages(out)
-    if (parsed.length > 0) await onImport(parsed)
+    if (valid.length > 0) await onImport(valid)
   }
 
   const onDrop = (e: DragEvent) => {
@@ -57,19 +61,25 @@ export function Library({ workouts, onImport, onOpen, onDelete }: Props) {
     >
       <h1>Workouts</h1>
 
-      <label className="dropzone">
-        <input
-          type="file"
-          accept=".zwo,application/xml,text/xml"
-          multiple
-          onChange={(e) => {
-            void importFiles(Array.from(e.target.files ?? []))
-            e.target.value = ''
-          }}
-        />
-        <strong>Import .zwo files</strong>
-        <span>Click to choose, or drop files here</span>
-      </label>
+      <div className="add-row">
+        <label className="dropzone">
+          <input
+            type="file"
+            accept=".zwo,application/xml,text/xml"
+            multiple
+            onChange={(e) => {
+              void importFiles(Array.from(e.target.files ?? []))
+              e.target.value = ''
+            }}
+          />
+          <strong>Import .zwo files</strong>
+          <span>Click to choose, or drop files here</span>
+        </label>
+        <button className="dropzone create" onClick={onCreate}>
+          <strong>Create a workout</strong>
+          <span>Build one from blocks in the editor</span>
+        </button>
+      </div>
 
       {messages.length > 0 && (
         <ul className="messages">
@@ -84,10 +94,7 @@ export function Library({ workouts, onImport, onOpen, onDelete }: Props) {
       {workouts.length === 0 ? (
         <div className="empty">
           <p>No workouts yet.</p>
-          <button
-            className="btn btn-secondary"
-            onClick={() => void onImport([parseZwo(sampleXml)])}
-          >
+          <button className="btn btn-secondary" onClick={() => void onImport([sampleXml])}>
             Add a sample workout
           </button>
         </div>

@@ -1,4 +1,11 @@
-import type { Segment, TextEvent, Workout } from './types'
+import {
+  blockDuration,
+  blockToSegments,
+  documentToWorkout,
+  type Block,
+  type ZwoDocument,
+} from './blocks'
+import type { TextEvent, Workout } from './types'
 
 export class ZwoParseError extends Error {
   constructor(message: string) {
@@ -14,8 +21,13 @@ export interface ParseOptions {
 
 const DEFAULT_TEXT_EVENT_DURATION = 10
 
-/** Parses a Zwift workout file (`.zwo`). Throws `ZwoParseError` on invalid input. */
+/** Parses a Zwift workout file (`.zwo`) into playable segments. Throws `ZwoParseError`. */
 export function parseZwo(xml: string, options: ParseOptions = {}): Workout {
+  return documentToWorkout(parseZwoDocument(xml, options))
+}
+
+/** Parses a Zwift workout file (`.zwo`) into editable blocks. Throws `ZwoParseError`. */
+export function parseZwoDocument(xml: string, options: ParseOptions = {}): ZwoDocument {
   const warn = options.onWarning ?? (() => {})
   const doc = new DOMParser().parseFromString(xml, 'application/xml')
   if (doc.getElementsByTagName('parsererror').length > 0) {
@@ -37,7 +49,7 @@ export function parseZwo(xml: string, options: ParseOptions = {}): Workout {
   const workoutEl = childElements(root).find((el) => el.tagName.toLowerCase() === 'workout')
   if (!workoutEl) throw new ZwoParseError('Missing <workout> element.')
 
-  const segments: Segment[] = []
+  const blocks: Block[] = []
   const textEvents: TextEvent[] = []
   let time = 0
 
@@ -49,94 +61,75 @@ export function parseZwo(xml: string, options: ParseOptions = {}): Workout {
       continue
     }
 
-    const parsed = parseElement(el, tag, warn)
-    if (!parsed) continue
+    const block = parseElement(el, tag, warn)
+    if (!block) continue
+    if (blockDuration(block) === 0 || blockToSegments(block).length === 0) {
+      warn(`Skipped <${el.tagName}> with a zero duration.`)
+      continue
+    }
 
     for (const textEl of childElements(el)) {
       if (textEl.tagName.toLowerCase() === 'textevent') pushTextEvent(textEvents, textEl, time)
     }
-    for (const segment of parsed) {
-      segments.push(segment)
-      time += segment.duration
-    }
+    blocks.push(block)
+    time += blockDuration(block)
   }
 
-  if (segments.length === 0) throw new ZwoParseError('The workout has no steps.')
+  if (blocks.length === 0) throw new ZwoParseError('The workout has no steps.')
 
   textEvents.sort((a, b) => a.offset - b.offset)
   return {
     name: childText(root, 'name') || 'Untitled workout',
     author: childText(root, 'author') || undefined,
     description: childText(root, 'description') || undefined,
-    segments,
+    blocks,
     textEvents,
   }
 }
 
-function parseElement(el: Element, tag: string, warn: (m: string) => void): Segment[] | undefined {
+function parseElement(el: Element, tag: string, warn: (m: string) => void): Block | undefined {
   const where = `<${el.tagName}>`
+  const cadence = numberAttr(el, 'Cadence')
   switch (tag) {
     case 'steadystate':
     case 'solidstate': {
-      const duration = requirePositive(el, 'Duration', where)
-      if (duration === undefined) return skipZero(where, warn)
+      const duration = requireDuration(el, where)
       const power =
         numberAttr(el, 'Power') ?? average(numberAttr(el, 'PowerLow'), numberAttr(el, 'PowerHigh'))
       if (power === undefined) throw new ZwoParseError(`${where} is missing the Power attribute.`)
-      return [{ kind: 'steady', duration, power, cadence: cadence(el), label: 'Steady' }]
+      return { kind: 'steady', duration, power, cadence }
     }
     case 'warmup':
     case 'cooldown':
-    case 'ramp': {
-      const duration = requirePositive(el, 'Duration', where)
-      if (duration === undefined) return skipZero(where, warn)
-      // Keep the attribute order as written: some cooldowns have PowerLow > PowerHigh.
-      const powerStart = requireNumber(el, 'PowerLow', where)
-      const powerEnd = requireNumber(el, 'PowerHigh', where)
-      const label = tag === 'warmup' ? 'Warmup' : tag === 'cooldown' ? 'Cooldown' : 'Ramp'
-      return [{ kind: 'ramp', duration, powerStart, powerEnd, cadence: cadence(el), label }]
-    }
+    case 'ramp':
+      return {
+        kind: tag,
+        duration: requireDuration(el, where),
+        // Keep the attribute order as written: some cooldowns have PowerLow > PowerHigh.
+        powerStart: requireNumber(el, 'PowerLow', where),
+        powerEnd: requireNumber(el, 'PowerHigh', where),
+        cadence,
+      }
     case 'intervalst': {
       const repeat = Math.round(numberAttr(el, 'Repeat') ?? 1)
       const onDuration = requireNumber(el, 'OnDuration', where)
       const offDuration = requireNumber(el, 'OffDuration', where)
       const onPower = numberAttr(el, 'OnPower') ?? requireNumber(el, 'PowerOnHigh', where)
       const offPower = numberAttr(el, 'OffPower') ?? requireNumber(el, 'PowerOffHigh', where)
-      const onCadence = numberAttr(el, 'Cadence')
-      const offCadence = numberAttr(el, 'CadenceResting')
-      if (repeat < 1) return skipZero(where, warn)
-
-      const out: Segment[] = []
-      for (let i = 1; i <= repeat; i++) {
-        const group = `Interval ${i}/${repeat}`
-        if (onDuration > 0) {
-          out.push({
-            kind: 'steady',
-            duration: onDuration,
-            power: onPower,
-            cadence: onCadence,
-            label: `${group} on`,
-          })
-        }
-        if (offDuration > 0) {
-          out.push({
-            kind: 'steady',
-            duration: offDuration,
-            power: offPower,
-            cadence: offCadence,
-            label: `${group} off`,
-          })
-        }
+      return {
+        kind: 'interval',
+        repeat: Math.max(repeat, 0),
+        onDuration,
+        onPower,
+        offDuration,
+        offPower,
+        cadence,
+        cadenceResting: numberAttr(el, 'CadenceResting'),
       }
-      return out.length > 0 ? out : skipZero(where, warn)
     }
     case 'freeride':
-    case 'maxeffort': {
-      const duration = requirePositive(el, 'Duration', where)
-      if (duration === undefined) return skipZero(where, warn)
-      const label = tag === 'freeride' ? 'Free ride' : 'Max effort'
-      return [{ kind: 'free', duration, cadence: cadence(el), label }]
-    }
+    case 'maxeffort':
+      return { kind: tag, duration: requireDuration(el, where), cadence }
     default:
       warn(`Skipped unknown element ${where}.`)
       return undefined
@@ -153,15 +146,6 @@ function pushTextEvent(out: TextEvent[], el: Element, base: number) {
   })
 }
 
-function skipZero(where: string, warn: (m: string) => void): undefined {
-  warn(`Skipped ${where} with a zero duration.`)
-  return undefined
-}
-
-function cadence(el: Element): number | undefined {
-  return numberAttr(el, 'Cadence')
-}
-
 function average(a: number | undefined, b: number | undefined): number | undefined {
   if (a === undefined || b === undefined) return a ?? b
   return (a + b) / 2
@@ -173,11 +157,10 @@ function requireNumber(el: Element, name: string, where: string): number {
   return value
 }
 
-/** Returns undefined for a zero duration so the caller can skip the element. */
-function requirePositive(el: Element, name: string, where: string): number | undefined {
-  const value = requireNumber(el, name, where)
-  if (value < 0) throw new ZwoParseError(`${where} has a negative ${name}.`)
-  return value === 0 ? undefined : value
+function requireDuration(el: Element, where: string): number {
+  const value = requireNumber(el, 'Duration', where)
+  if (value < 0) throw new ZwoParseError(`${where} has a negative Duration.`)
+  return value
 }
 
 /** Attribute lookup is case-insensitive: real-world files mix `Duration` and `duration`. */

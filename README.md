@@ -4,10 +4,10 @@ Runs Zwift workouts (`.zwo`) on a smart trainer in ERG mode, from the browser. P
 
 ## Run it
 
-With Docker:
+With Docker (`just --list` shows the other recipes: `stop`, `test`, `lint`):
 
 ```sh
-docker compose up --build
+just run
 ```
 
 Without Docker (Node 22+):

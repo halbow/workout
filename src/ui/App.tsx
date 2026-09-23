@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react'
 import { loadSettings, saveSettings, type Settings as SettingsData } from '../storage/settings'
-import { deleteWorkout, listWorkouts, saveWorkout, type SavedWorkout } from '../storage/workouts'
-import type { Workout } from '../workout'
+import {
+  deleteWorkout,
+  listWorkouts,
+  saveWorkout,
+  updateWorkout,
+  type SavedWorkout,
+} from '../storage/workouts'
+import { parseZwoDocument, serializeZwo, type ZwoDocument } from '../workout'
 import { Header } from './components/Header'
 import { TrainerSessionContext } from './hooks/useTrainer'
 import { Library } from './screens/Library'
 import { Ride } from './screens/Ride'
 import { Settings } from './screens/Settings'
+import { WorkoutEditor } from './screens/WorkoutEditor'
 import { WorkoutDetail } from './screens/WorkoutDetail'
 import { TrainerSession } from './trainer-session'
 
 type Route =
   | { screen: 'library' }
+  /** Without an id, creates a new workout. */
+  | { screen: 'editor'; id?: string }
   | { screen: 'detail'; id: string }
   | { screen: 'ride'; id: string }
   | { screen: 'settings'; back: Route }
@@ -36,9 +45,17 @@ export function App() {
     saveSettings(next)
   }
 
-  const onImport = async (imported: Workout[]) => {
-    for (const w of imported) await saveWorkout(w)
+  const onImport = async (files: string[]) => {
+    for (const zwo of files) await saveWorkout(zwo)
     setWorkouts(await listWorkouts())
+  }
+
+  const onSaveEditor = async (doc: ZwoDocument, id?: string) => {
+    const zwo = serializeZwo(doc)
+    if (id) await updateWorkout(id, zwo)
+    else await saveWorkout(zwo)
+    setWorkouts(await listWorkouts())
+    setRoute(id ? { screen: 'detail', id } : { screen: 'library' })
   }
 
   const onDelete = async (id: string) => {
@@ -47,6 +64,8 @@ export function App() {
   }
 
   const current = 'id' in route ? workouts.find((w) => w.id === route.id) : undefined
+  const back = () =>
+    setRoute(current ? { screen: 'detail', id: current.id } : { screen: 'library' })
   const home = () => setRoute({ screen: 'library' })
 
   let screen
@@ -59,6 +78,15 @@ export function App() {
           setRoute(route.back)
         }}
         onBack={() => setRoute(route.back)}
+      />
+    )
+  } else if (route.screen === 'editor') {
+    screen = (
+      <WorkoutEditor
+        key={current?.id ?? 'new'}
+        initial={current && parseZwoDocument(current.zwo)}
+        onSave={(doc) => onSaveEditor(doc, current?.id)}
+        onBack={back}
       />
     )
   } else if (route.screen === 'ride' && current && settings.ftp !== undefined) {
@@ -75,6 +103,7 @@ export function App() {
         workout={current.workout}
         ftp={settings.ftp}
         onStart={() => setRoute({ screen: 'ride', id: current.id })}
+        onEdit={() => setRoute({ screen: 'editor', id: current.id })}
         onBack={home}
         onSettings={() => setRoute({ screen: 'settings', back: route })}
       />
@@ -84,6 +113,7 @@ export function App() {
       <Library
         workouts={workouts}
         onImport={onImport}
+        onCreate={() => setRoute({ screen: 'editor' })}
         onOpen={(id) => setRoute({ screen: 'detail', id })}
         onDelete={(id) => void onDelete(id)}
       />
