@@ -1,0 +1,20 @@
+<workout_file>
+  <author>Test Author</author>
+  <name>All elements</name>
+  <description>One of each element type.</description>
+  <sportType>bike</sportType>
+  <workout>
+    <Warmup Duration="600" PowerLow="0.40" PowerHigh="0.75"/>
+    <SteadyState Duration="300" Power="0.88" Cadence="90">
+      <textevent timeoffset="10" message="Settle in"/>
+    </SteadyState>
+    <IntervalsT Repeat="3" OnDuration="180" OffDuration="120" OnPower="1.05" OffPower="0.55" Cadence="95" CadenceResting="85">
+      <textevent timeoffset="0" message="First effort"/>
+      <textevent timeoffset="300" message="Second effort"/>
+    </IntervalsT>
+    <Ramp Duration="300" PowerLow="0.60" PowerHigh="0.90"/>
+    <FreeRide Duration="600" FlatRoad="1"/>
+    <MaxEffort Duration="20"/>
+    <Cooldown Duration="600" PowerLow="0.70" PowerHigh="0.40"/>
+  </workout>
+</workout_file>
