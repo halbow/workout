@@ -723,3 +723,11 @@ button {
   color: var(--text);
   min-height: 40px;
 }
+
+.field-input:invalid {
+  border-color: var(--danger);
+}
+
+.block-errors {
+  margin: 0.5rem 0 0;
+}
