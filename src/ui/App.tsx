@@ -101,6 +101,7 @@ export function App() {
     screen = (
       <WorkoutDetail
         workout={current.workout}
+        zwo={current.zwo}
         ftp={settings.ftp}
         onStart={() => setRoute({ screen: 'ride', id: current.id })}
         onEdit={() => setRoute({ screen: 'editor', id: current.id })}

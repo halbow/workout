@@ -5,6 +5,8 @@ import { describePower, segmentColor } from '../zones'
 
 interface Props {
   workout: Workout
+  /** The stored `.zwo` file, offered as a download. */
+  zwo: string
   ftp?: number
   onStart: () => void
   onEdit: () => void
@@ -12,7 +14,7 @@ interface Props {
   onSettings: () => void
 }
 
-export function WorkoutDetail({ workout, ftp, onStart, onEdit, onBack, onSettings }: Props) {
+export function WorkoutDetail({ workout, zwo, ftp, onStart, onEdit, onBack, onSettings }: Props) {
   const { ready } = useTrainer()
   const canStart = ready && ftp !== undefined
 
@@ -23,9 +25,14 @@ export function WorkoutDetail({ workout, ftp, onStart, onEdit, onBack, onSetting
       </button>
       <div className="title-row">
         <h1>{workout.name}</h1>
-        <button className="btn btn-secondary" onClick={onEdit}>
-          Edit
-        </button>
+        <div className="title-actions">
+          <button className="btn btn-secondary" onClick={() => downloadZwo(workout.name, zwo)}>
+            Download .zwo
+          </button>
+          <button className="btn btn-secondary" onClick={onEdit}>
+            Edit
+          </button>
+        </div>
       </div>
       <p className="muted">
         {formatDuration(totalDuration(workout))}
@@ -64,4 +71,18 @@ export function WorkoutDetail({ workout, ftp, onStart, onEdit, onBack, onSetting
       </ol>
     </section>
   )
+}
+
+function downloadZwo(name: string, zwo: string) {
+  const url = URL.createObjectURL(new Blob([zwo], { type: 'application/xml' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${fileName(name)}.zwo`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/** Keeps the name readable but drops characters file systems reject. */
+function fileName(name: string): string {
+  return name.replace(/[\\/:*?"<>|]+/g, '').trim() || 'workout'
 }

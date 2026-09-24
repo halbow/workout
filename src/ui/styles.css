@@ -714,6 +714,11 @@ button {
   gap: 1rem;
 }
 
+.title-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .field-select {
   font: inherit;
   padding: 0.4rem 0.5rem;
