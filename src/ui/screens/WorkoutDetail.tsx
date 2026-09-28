@@ -1,5 +1,6 @@
 import { formatDuration, totalDuration, type Workout } from '../../workout'
 import { PowerProfileChart } from '../components/PowerProfileChart'
+import { downloadText } from '../download'
 import { useTrainer } from '../hooks/useTrainer'
 import { describePower, segmentColor } from '../zones'
 
@@ -74,12 +75,7 @@ export function WorkoutDetail({ workout, zwo, ftp, onStart, onEdit, onBack, onSe
 }
 
 function downloadZwo(name: string, zwo: string) {
-  const url = URL.createObjectURL(new Blob([zwo], { type: 'application/xml' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${fileName(name)}.zwo`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadText(`${fileName(name)}.zwo`, zwo, 'application/xml')
 }
 
 /** Keeps the name readable but drops characters file systems reject. */

@@ -437,6 +437,36 @@ button {
   min-height: 56px;
 }
 
+.log-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  max-width: 560px;
+}
+
+.log-panel h2 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.log-panel .field-select {
+  max-width: 320px;
+}
+
+.log-item {
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.log-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
 /* Ride */
 
 .ride-top {

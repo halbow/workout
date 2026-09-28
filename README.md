@@ -29,6 +29,17 @@ Then open **http://localhost:5173 in Chrome or Edge on the host**. Bluetooth is 
 
 Keep the tab in front during a ride: browsers throttle background tabs. The runner computes the current step from elapsed time so it doesn't drift, but targets are sent less often. The screen is kept on with the Wake Lock API.
 
+## Logs
+
+The app keeps its logs in the browser (IndexedDB), one per workout, named after its start time (e.g. `tiny_trainer_2026-09-28_10-15-00.log`). The last 10 are listed in ⚙︎ → **Logs**, each with a **Download** button. An error outside a workout (e.g. while pairing) starts a log of its own. The lines logged before a log starts (pairing, etc.) go at the top of the next one.
+
+The log level is set in ⚙︎ → **Logs**:
+
+- **Normal**: commands sent to the trainer and its responses, status changes, workout events, errors.
+- **Debug**: also every data notification (power, cadence, speed).
+
+Each error also writes the 50 entries before it and the 50 after it, debug ones included, so there is context to debug. Everything is also printed to the browser console.
+
 ## Scripts
 
 | Command | What it does |

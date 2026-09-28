@@ -1,3 +1,4 @@
+import { log as logger } from '../logging'
 import { Emitter } from './emitter'
 import type { Trainer, TrainerEvent, TrainerStatus } from './types'
 
@@ -10,6 +11,8 @@ export interface MockTrainerOptions {
   /** Watts the simulated rider pushes when ERG is off. */
   freeRidePower?: number
 }
+
+const log = logger.scope('mock')
 
 /** A simulated trainer: power follows the target with some lag and noise, cadence stays around 90. */
 export class MockTrainer implements Trainer {
@@ -58,6 +61,7 @@ export class MockTrainer implements Trainer {
 
   async setTargetPower(watts: number) {
     this.assertConnected()
+    log.info(`→ set target power ${watts} W`)
     this.commands.push({ type: 'setTargetPower', watts })
     this.target = watts
     if (this.status === 'connected') this.setStatus('controlling')
@@ -65,6 +69,7 @@ export class MockTrainer implements Trainer {
 
   async releaseControl() {
     this.assertConnected()
+    log.info('→ release control')
     this.commands.push({ type: 'releaseControl' })
     this.target = undefined
     this.setStatus('connected')
@@ -80,15 +85,14 @@ export class MockTrainer implements Trainer {
     const goal = this.target ?? this.freeRidePower
     const noise = (this.random() - 0.5) * 10
     this.power = Math.max(0, this.power + (goal - this.power) * 0.4 + noise)
-    this.emitter.emit({
-      type: 'data',
-      data: {
-        power: Math.round(this.power),
-        cadence: Math.round(90 + (this.random() - 0.5) * 6),
-        speed: Math.round((25 + this.power / 20) * 10) / 10,
-        timestamp: Date.now(),
-      },
-    })
+    const data = {
+      power: Math.round(this.power),
+      cadence: Math.round(90 + (this.random() - 0.5) * 6),
+      speed: Math.round((25 + this.power / 20) * 10) / 10,
+      timestamp: Date.now(),
+    }
+    log.debug('← data', data)
+    this.emitter.emit({ type: 'data', data })
   }
 
   private assertConnected() {
@@ -103,6 +107,7 @@ export class MockTrainer implements Trainer {
   }
 
   private setStatus(status: TrainerStatus, error?: string) {
+    log.info(`status ${this.status} → ${status}`, error === undefined ? undefined : { error })
     this.status = status
     this.emitter.emit({ type: 'status', status, error })
   }

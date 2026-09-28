@@ -1,3 +1,4 @@
+import { log as logger } from '../logging'
 import type { Trainer, TrainerData, TrainerEvent } from '../trainer/types'
 import {
   segmentAt,
@@ -9,6 +10,8 @@ import {
   type Workout,
 } from '../workout'
 import { realClock, type Clock } from './clock'
+
+const log = logger.scope('runner')
 
 export type RunnerState = 'idle' | 'running' | 'paused' | 'finished' | 'stopped'
 
@@ -128,6 +131,7 @@ export class WorkoutRunner {
   }
 
   private run() {
+    log.info(this.state === 'paused' ? 'resumed' : 'started', { elapsed: this.elapsedMs() / 1000 })
     this.state = 'running'
     this.pauseReason = undefined
     this.runningSince = this.clock.now()
@@ -141,6 +145,7 @@ export class WorkoutRunner {
 
   private pauseWith(reason: NonNullable<RunnerSnapshot['pauseReason']>) {
     this.accumulatedMs = this.elapsedMs()
+    log.info('paused', { reason, elapsed: this.accumulatedMs / 1000 })
     this.state = 'paused'
     this.pauseReason = reason
     this.cancelTick?.()
@@ -151,6 +156,7 @@ export class WorkoutRunner {
 
   private end(state: 'finished' | 'stopped') {
     this.accumulatedMs = Math.min(this.elapsedMs(), this.total * 1000)
+    log.info(state, { elapsed: this.accumulatedMs / 1000 })
     this.state = state
     this.pauseReason = undefined
     this.cancelTick?.()
@@ -169,6 +175,7 @@ export class WorkoutRunner {
 
     const segmentChanged = position.index !== this.lastSegmentIndex
     this.lastSegmentIndex = position.index
+    if (segmentChanged) log.info(`segment ${position.index}`, position.segment)
 
     if (position.segment.kind === 'free') {
       if (!this.released) this.release()

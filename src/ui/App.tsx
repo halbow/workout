@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { log } from '../logging'
 import { loadSettings, saveSettings, type Settings as SettingsData } from '../storage/settings'
 import {
   deleteWorkout,
@@ -73,6 +74,11 @@ export function App() {
     screen = (
       <Settings
         ftp={settings.ftp}
+        logLevel={settings.logLevel}
+        onLogLevelChange={(logLevel) => {
+          updateSettings({ logLevel })
+          log.level = logLevel
+        }}
         onSave={(ftp) => {
           updateSettings({ ftp })
           setRoute(route.back)

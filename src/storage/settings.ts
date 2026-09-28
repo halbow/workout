@@ -4,9 +4,11 @@ export interface Settings {
   /** Watts. Undefined until the rider sets it. */
   ftp?: number
   simulatedTrainer: boolean
+  /** `debug` also logs every data notification from the trainer, not only commands and responses. */
+  logLevel: 'info' | 'debug'
 }
 
-const DEFAULTS: Settings = { simulatedTrainer: false }
+const DEFAULTS: Settings = { simulatedTrainer: false, logLevel: 'info' }
 
 export function loadSettings(): Settings {
   try {

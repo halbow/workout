@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { log } from '../../logging'
 import { WorkoutRunner } from '../../runner'
+import { logRecorder } from '../../storage/logs'
 import { formatDuration, type Workout } from '../../workout'
 import { BigMetric } from '../components/BigMetric'
 import { PowerProfileChart } from '../components/PowerProfileChart'
@@ -42,6 +44,16 @@ function RideView({ runner, workout, ftp, onExit }: Props & { runner: WorkoutRun
       : Math.abs(power - s.targetPower) <= Math.max(10, s.targetPower * 0.05)
         ? 'good'
         : 'warn'
+
+  const start = () => {
+    // One log per workout, named after its start time.
+    logRecorder.start(workout.name)
+    log.log('info', 'ride', `workout "${workout.name}" started`, {
+      ftp,
+      trainer: session.trainer.name,
+    })
+    runner.start()
+  }
 
   const exit = () => {
     if (active && !confirm('Stop the workout?')) return
@@ -118,11 +130,7 @@ function RideView({ runner, workout, ftp, onExit }: Props & { runner: WorkoutRun
 
       <div className="controls">
         {s.state === 'idle' && (
-          <button
-            className="btn btn-primary btn-large"
-            disabled={!ready}
-            onClick={() => runner.start()}
-          >
+          <button className="btn btn-primary btn-large" disabled={!ready} onClick={start}>
             Start
           </button>
         )}

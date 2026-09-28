@@ -1,3 +1,4 @@
+import { log as logger, toHex } from '../../logging'
 import { Emitter } from '../emitter'
 import type { Trainer, TrainerEvent, TrainerStatus } from '../types'
 import {
@@ -25,6 +26,8 @@ import {
 /** Minimum time between two Set Target Power writes. */
 const POWER_INTERVAL_MS = 1000
 const MAX_WATTS = 2000
+
+const log = logger.scope('ftms')
 
 export function isWebBluetoothAvailable(): boolean {
   return typeof navigator !== 'undefined' && 'bluetooth' in navigator
@@ -59,9 +62,11 @@ export class FtmsTrainer implements Trainer {
     }
     this.setStatus('connecting')
     try {
+      log.info('requesting device')
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: [FTMS_SERVICE] }],
       })
+      log.info('device selected', { name: device.name, id: device.id })
       this.device?.removeEventListener('gattserverdisconnected', this.onDisconnected)
       this.device = device
       device.addEventListener('gattserverdisconnected', this.onDisconnected)
@@ -74,6 +79,7 @@ export class FtmsTrainer implements Trainer {
 
   async reconnect() {
     if (!this.device) return this.connect()
+    log.info('reconnecting', { name: this.device.name })
     this.setStatus('connecting')
     try {
       await this.setup()
@@ -84,6 +90,7 @@ export class FtmsTrainer implements Trainer {
   }
 
   async disconnect() {
+    log.info('disconnecting')
     this.manualDisconnect = true
     this.cancelPendingPower()
     if (this.device?.gatt?.connected && this.status === 'controlling') {
@@ -119,26 +126,43 @@ export class FtmsTrainer implements Trainer {
   async releaseControl() {
     this.cancelPendingPower()
     if (this.status !== 'controlling') return
-    await this.command(encodeReset(), 'release control')
+    try {
+      await this.command(encodeReset(), 'release control')
+    } catch (error) {
+      log.error('release control failed', error)
+      throw error
+    }
     this.lastSentPower = undefined
     this.setStatus('connected')
   }
 
   private async setup() {
     const server = await this.device!.gatt!.connect()
+    log.info('GATT connected')
     const service = await server.getPrimaryService(FTMS_SERVICE)
     this.manualDisconnect = false
 
     const features = await optionalCharacteristic(service, FITNESS_MACHINE_FEATURE)
-    if (features && !decodeFeatures(await features.readValue()).powerTargetSupported) {
-      throw new Error('This trainer does not support ERG mode (power target).')
+    if (features) {
+      const value = await features.readValue()
+      const decoded = decodeFeatures(value)
+      log.info(`← features ${toHex(value)}`, decoded)
+      if (!decoded.powerTargetSupported) {
+        throw new Error('This trainer does not support ERG mode (power target).')
+      }
     }
 
     const controlPoint = await service.getCharacteristic(FITNESS_MACHINE_CONTROL_POINT)
-    const queue = new ControlPointQueue((bytes) => controlPoint.writeValueWithResponse(bytes))
+    const queue = new ControlPointQueue((bytes) => {
+      log.info(`→ control point ${toHex(bytes)}`)
+      return controlPoint.writeValueWithResponse(bytes)
+    })
     this.queue?.close()
     this.queue = queue
-    this.listen(controlPoint, (view) => queue.handleIndication(view))
+    this.listen(controlPoint, (view) => {
+      log.info(`← control point ${toHex(view)}`)
+      queue.handleIndication(view)
+    })
     await controlPoint.startNotifications()
 
     const bikeData = await service.getCharacteristic(INDOOR_BIKE_DATA)
@@ -174,6 +198,7 @@ export class FtmsTrainer implements Trainer {
       await this.command(encodeSetTargetPower(watts), 'set target power')
       this.lastSentPower = watts
     } catch (error) {
+      log.error('set target power failed', { watts, error: errorMessage(error) })
       this.emitter.emit({ type: 'error', message: errorMessage(error) })
     }
   }
@@ -224,16 +249,17 @@ export class FtmsTrainer implements Trainer {
 
   private onBikeData = (view: DataView) => {
     try {
-      this.emitter.emit({
-        type: 'data',
-        data: { ...decodeIndoorBikeData(view), timestamp: Date.now() },
-      })
+      const data = decodeIndoorBikeData(view)
+      log.debug(`← bike data ${toHex(view)}`, data)
+      this.emitter.emit({ type: 'data', data: { ...data, timestamp: Date.now() } })
     } catch {
       // Ignore truncated packets.
+      log.debug(`← bike data ${toHex(view)} (truncated)`)
     }
   }
 
   private onMachineStatus = (view: DataView) => {
+    log.info(`← machine status ${toHex(view)}`)
     if (
       decodeMachineStatus(view) === MachineStatus.ControlPermissionLost &&
       this.status === 'controlling'
@@ -244,6 +270,8 @@ export class FtmsTrainer implements Trainer {
   }
 
   private onDisconnected = () => {
+    if (this.manualDisconnect) log.info('GATT disconnected')
+    else log.error('the trainer disconnected unexpectedly')
     this.queue?.close()
     this.queue = undefined
     this.teardown()
@@ -256,13 +284,16 @@ export class FtmsTrainer implements Trainer {
     const message = errorMessage(error)
     // The user closing the device picker is not an error.
     if (error instanceof DOMException && error.name === 'NotFoundError') {
+      log.info('device picker closed')
       this.setStatus('disconnected')
     } else {
+      log.error('connection failed', { error: message })
       this.setStatus('error', message)
     }
   }
 
   private setStatus(status: TrainerStatus, error?: string) {
+    log.info(`status ${this.status} → ${status}`, error === undefined ? undefined : { error })
     this.status = status
     this.emitter.emit({ type: 'status', status, error })
   }
