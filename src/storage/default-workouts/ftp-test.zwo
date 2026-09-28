@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workout_file>
+    <author>ERG Workout Player</author>
+    <name>FTP test (20 min)</name>
+    <description>The classic 20-minute test. Needs a bike with gears: ERG is off for the efforts, so you set the effort with your gears. No gears? Use the FTP ramp test. Ride as hard as you can hold for the whole 20 minutes, starting a little conservative. Your FTP is 95% of your average power over the 20 minutes.</description>
+    <sportType>bike</sportType>
+    <durationType>time</durationType>
+    <tags>
+        <tag name="FTP"/>
+    </tags>
+    <workout>
+        <Warmup Duration="600" PowerLow="0.45" PowerHigh="0.75">
+            <textevent timeoffset="0" message="Easy warm up, 10 minutes."/>
+        </Warmup>
+        <IntervalsT Repeat="3" OnDuration="60" OffDuration="60" OnPower="1.00" OffPower="0.50">
+            <textevent timeoffset="0" message="Three openers at FTP."/>
+        </IntervalsT>
+        <SteadyState Duration="300" Power="0.50"/>
+        <MaxEffort Duration="300">
+            <textevent timeoffset="0" message="5 minutes hard, to clear the legs before the test."/>
+        </MaxEffort>
+        <SteadyState Duration="600" Power="0.50">
+            <textevent timeoffset="0" message="Recover. The test starts in 10 minutes."/>
+            <textevent timeoffset="540" message="1 minute to go. Get ready."/>
+        </SteadyState>
+        <FreeRide Duration="1200">
+            <textevent timeoffset="0" message="20 minutes as hard as you can hold. Pace it."/>
+            <textevent timeoffset="600" message="Halfway."/>
+            <textevent timeoffset="1140" message="1 minute left, empty the tank."/>
+        </FreeRide>
+        <Cooldown Duration="600" PowerLow="0.55" PowerHigh="0.40">
+            <textevent timeoffset="0" message="Done. FTP = 95% of your 20-minute average power."/>
+        </Cooldown>
+    </workout>
+</workout_file>

@@ -22,7 +22,7 @@ Then open **http://localhost:5173 in Chrome or Edge on the host**. Bluetooth is 
 ## Use it
 
 1. Set your FTP (asked on first launch, or ⚙︎).
-2. Import `.zwo` files (click or drag and drop), or add the sample workout.
+2. Pick a default workout (FTP ramp test, 20-minute FTP test, recovery, zone 2, sweet spot, VO2max), import `.zwo` files (click or drag and drop), or create one. Default workouts can't be deleted; editing one saves a copy. Hide them in ⚙︎ → **Workouts**.
 3. Click **Pair trainer** and pick the KICKR in the Chrome device picker. The status should show **Controlling**.
    No trainer at hand? Tick **Use simulated trainer**.
 4. Open a workout and click **Start workout**, then **Start**.

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workout_file>
+    <author>ERG Workout Player</author>
+    <name>VO2max 5 × 3</name>
+    <description>Five 3-minute efforts well above threshold, with as much recovery. Short, and very hard.</description>
+    <sportType>bike</sportType>
+    <durationType>time</durationType>
+    <tags>
+        <tag name="VO2MAX"/>
+    </tags>
+    <workout>
+        <Warmup Duration="600" PowerLow="0.45" PowerHigh="0.75"/>
+        <IntervalsT Repeat="2" OnDuration="30" OffDuration="90" OnPower="1.10" OffPower="0.55"/>
+        <SteadyState Duration="180" Power="0.55"/>
+        <IntervalsT Repeat="5" OnDuration="180" OffDuration="180" OnPower="1.15" OffPower="0.50" Cadence="95">
+            <textevent timeoffset="0" message="First effort. Keep the cadence high."/>
+        </IntervalsT>
+        <Cooldown Duration="480" PowerLow="0.55" PowerHigh="0.40"/>
+    </workout>
+</workout_file>

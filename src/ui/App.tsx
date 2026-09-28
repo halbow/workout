@@ -79,6 +79,10 @@ export function App() {
           updateSettings({ logLevel })
           log.level = logLevel
         }}
+        showDefaultWorkouts={settings.showDefaultWorkouts}
+        onShowDefaultWorkoutsChange={(showDefaultWorkouts) =>
+          updateSettings({ showDefaultWorkouts })
+        }
         onSave={(ftp) => {
           updateSettings({ ftp })
           setRoute(route.back)
@@ -91,7 +95,7 @@ export function App() {
       <WorkoutEditor
         key={current?.id ?? 'new'}
         initial={current && parseZwoDocument(current.zwo)}
-        onSave={(doc) => onSaveEditor(doc, current?.id)}
+        onSave={(doc) => onSaveEditor(doc, current?.isDefault ? undefined : current?.id)}
         onBack={back}
       />
     )
@@ -109,6 +113,7 @@ export function App() {
         workout={current.workout}
         zwo={current.zwo}
         ftp={settings.ftp}
+        isDefault={current.isDefault}
         onStart={() => setRoute({ screen: 'ride', id: current.id })}
         onEdit={() => setRoute({ screen: 'editor', id: current.id })}
         onBack={home}
@@ -118,7 +123,7 @@ export function App() {
   } else {
     screen = (
       <Library
-        workouts={workouts}
+        workouts={settings.showDefaultWorkouts ? workouts : workouts.filter((w) => !w.isDefault)}
         onImport={onImport}
         onCreate={() => setRoute({ screen: 'editor' })}
         onOpen={(id) => setRoute({ screen: 'detail', id })}

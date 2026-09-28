@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workout_file>
+    <author>ERG Workout Player</author>
+    <name>Recovery</name>
+    <description>An easy spin at the bottom of zone 2. Keep it light, the goal is to move the legs, not to train.</description>
+    <sportType>bike</sportType>
+    <durationType>time</durationType>
+    <tags>
+        <tag name="RECOVERY"/>
+    </tags>
+    <workout>
+        <Warmup Duration="300" PowerLow="0.40" PowerHigh="0.58"/>
+        <SteadyState Duration="1800" Power="0.58" Cadence="90"/>
+        <Cooldown Duration="300" PowerLow="0.58" PowerHigh="0.40"/>
+    </workout>
+</workout_file>

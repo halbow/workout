@@ -9,13 +9,24 @@ interface Props {
   /** The stored `.zwo` file, offered as a download. */
   zwo: string
   ftp?: number
+  /** Shipped with the app: editing saves a copy. */
+  isDefault?: boolean
   onStart: () => void
   onEdit: () => void
   onBack: () => void
   onSettings: () => void
 }
 
-export function WorkoutDetail({ workout, zwo, ftp, onStart, onEdit, onBack, onSettings }: Props) {
+export function WorkoutDetail({
+  workout,
+  zwo,
+  ftp,
+  isDefault,
+  onStart,
+  onEdit,
+  onBack,
+  onSettings,
+}: Props) {
   const { ready } = useTrainer()
   const canStart = ready && ftp !== undefined
 
@@ -31,7 +42,7 @@ export function WorkoutDetail({ workout, zwo, ftp, onStart, onEdit, onBack, onSe
             Download .zwo
           </button>
           <button className="btn btn-secondary" onClick={onEdit}>
-            Edit
+            {isDefault ? 'Edit a copy' : 'Edit'}
           </button>
         </div>
       </div>

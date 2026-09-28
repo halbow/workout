@@ -274,12 +274,6 @@ button {
   color: var(--danger);
 }
 
-.empty {
-  text-align: center;
-  color: var(--muted);
-  padding: 2rem 0;
-}
-
 .workout-list {
   list-style: none;
   padding: 0;
@@ -290,6 +284,7 @@ button {
 }
 
 .workout-item {
+  position: relative;
   display: flex;
   align-items: center;
   background: var(--surface);
@@ -313,6 +308,19 @@ button {
 
 .workout-name {
   font-weight: 600;
+}
+
+.badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  pointer-events: none;
 }
 
 .workout-meta {

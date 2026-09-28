@@ -1,7 +1,6 @@
 import { useState, type DragEvent } from 'react'
 import type { SavedWorkout } from '../../storage/workouts'
 import { formatDuration, parseZwo, totalDuration } from '../../workout'
-import sampleXml from '../sample-workout.zwo?raw'
 
 interface Props {
   workouts: SavedWorkout[]
@@ -91,24 +90,21 @@ export function Library({ workouts, onImport, onCreate, onOpen, onDelete }: Prop
         </ul>
       )}
 
-      {workouts.length === 0 ? (
-        <div className="empty">
-          <p>No workouts yet.</p>
-          <button className="btn btn-secondary" onClick={() => void onImport([sampleXml])}>
-            Add a sample workout
-          </button>
-        </div>
-      ) : (
-        <ul className="workout-list">
-          {workouts.map(({ id, workout }) => (
-            <li key={id} className="workout-item">
-              <button className="workout-open" onClick={() => onOpen(id)}>
-                <span className="workout-name">{workout.name}</span>
-                <span className="workout-meta">
-                  {formatDuration(totalDuration(workout))} · {workout.segments.length} steps
-                  {workout.author ? ` · ${workout.author}` : ''}
-                </span>
-              </button>
+      {workouts.length === 0 && (
+        <p className="muted">No workouts yet. Default workouts can be shown again in settings.</p>
+      )}
+      <ul className="workout-list">
+        {workouts.map(({ id, workout, isDefault }) => (
+          <li key={id} className="workout-item">
+            <button className="workout-open" onClick={() => onOpen(id)}>
+              <span className="workout-name">{workout.name}</span>
+              <span className="workout-meta">
+                {formatDuration(totalDuration(workout))} · {workout.segments.length} steps
+                {workout.author ? ` · ${workout.author}` : ''}
+              </span>
+            </button>
+            {isDefault && <span className="badge">default</span>}
+            {!isDefault && (
               <button
                 className="btn btn-ghost"
                 aria-label={`Delete ${workout.name}`}
@@ -118,10 +114,10 @@ export function Library({ workouts, onImport, onCreate, onOpen, onDelete }: Prop
               >
                 🗑
               </button>
-            </li>
-          ))}
-        </ul>
-      )}
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workout_file>
+    <author>ERG Workout Player</author>
+    <name>Zone 2 ride</name>
+    <description>An hour of endurance riding, moving between the bottom and the top of zone 2 to keep it interesting.</description>
+    <sportType>bike</sportType>
+    <durationType>time</durationType>
+    <tags>
+        <tag name="ENDURANCE"/>
+    </tags>
+    <workout>
+        <Warmup Duration="600" PowerLow="0.45" PowerHigh="0.65"/>
+        <SteadyState Duration="600" Power="0.62"/>
+        <SteadyState Duration="600" Power="0.68"/>
+        <SteadyState Duration="480" Power="0.72"/>
+        <SteadyState Duration="300" Power="0.60"/>
+        <SteadyState Duration="600" Power="0.70"/>
+        <SteadyState Duration="300" Power="0.74"/>
+        <SteadyState Duration="420" Power="0.65"/>
+        <Cooldown Duration="300" PowerLow="0.60" PowerHigh="0.40"/>
+    </workout>
+</workout_file>

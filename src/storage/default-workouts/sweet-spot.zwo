@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workout_file>
+    <author>ERG Workout Player</author>
+    <name>Sweet spot 3 × 10</name>
+    <description>Three 10-minute blocks just under threshold. Hard but sustainable: a lot of fitness for the effort.</description>
+    <sportType>bike</sportType>
+    <durationType>time</durationType>
+    <tags>
+        <tag name="SWEET SPOT"/>
+    </tags>
+    <workout>
+        <Warmup Duration="600" PowerLow="0.45" PowerHigh="0.75"/>
+        <SteadyState Duration="180" Power="0.60"/>
+        <IntervalsT Repeat="3" OnDuration="600" OffDuration="300" OnPower="0.90" OffPower="0.55">
+            <textevent timeoffset="0" message="First block. Steady breathing."/>
+        </IntervalsT>
+        <Cooldown Duration="420" PowerLow="0.60" PowerHigh="0.40"/>
+    </workout>
+</workout_file>

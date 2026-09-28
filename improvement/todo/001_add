@@ -1,4 +1,4 @@
 # Guard
 
-Let's make sure that all the data we send to the bluetotoh device is corretc (not sending more than 500 watts, interval onger warmup more than 1 hour, interval/recovery  more than 1 hour, steady more than 6 hours, ect)
+Let's make sure that all the data we send to the bluetotoh device is corretc (not sending more than 400 watts, interval onger warmup more than 1 hour, interval/recovery  more than 1 hour, steady more than 6 hours, ect)
 

@@ -9,11 +9,21 @@ interface Props {
   ftp?: number
   logLevel: LogLevel
   onLogLevelChange: (level: LogLevel) => void
+  showDefaultWorkouts: boolean
+  onShowDefaultWorkoutsChange: (show: boolean) => void
   onSave: (ftp: number) => void
   onBack: () => void
 }
 
-export function Settings({ ftp, logLevel, onLogLevelChange, onSave, onBack }: Props) {
+export function Settings({
+  ftp,
+  logLevel,
+  onLogLevelChange,
+  showDefaultWorkouts,
+  onShowDefaultWorkoutsChange,
+  onSave,
+  onBack,
+}: Props) {
   const [value, setValue] = useState(ftp?.toString() ?? '')
   const parsed = Number(value)
   const valid = Number.isInteger(parsed) && parsed >= 50 && parsed <= 600
@@ -47,6 +57,17 @@ export function Settings({ ftp, logLevel, onLogLevelChange, onSave, onBack }: Pr
           Save
         </button>
       </form>
+      <div className="log-panel">
+        <h2>Workouts</h2>
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={showDefaultWorkouts}
+            onChange={(e) => onShowDefaultWorkoutsChange(e.target.checked)}
+          />
+          Show default workouts
+        </label>
+      </div>
       <LogPanel level={logLevel} onLevelChange={onLogLevelChange} />
       {debug && <BleDebugPanel />}
     </section>

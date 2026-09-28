@@ -6,9 +6,11 @@ export interface Settings {
   simulatedTrainer: boolean
   /** `debug` also logs every data notification from the trainer, not only commands and responses. */
   logLevel: 'info' | 'debug'
+  /** Lists the workouts shipped with the app in the library. */
+  showDefaultWorkouts: boolean
 }
 
-const DEFAULTS: Settings = { simulatedTrainer: false, logLevel: 'info' }
+const DEFAULTS: Settings = { simulatedTrainer: false, logLevel: 'info', showDefaultWorkouts: true }
 
 export function loadSettings(): Settings {
   try {

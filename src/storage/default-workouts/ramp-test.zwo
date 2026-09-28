@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workout_file>
+    <author>ERG Workout Player</author>
+    <name>FTP ramp test</name>
+    <description>The short FTP test: after a warm up, the target goes up by 5% of FTP every minute until you can't hold it. Then press Stop. Your FTP is about 75% of the target of the last minute you fully completed.</description>
+    <sportType>bike</sportType>
+    <durationType>time</durationType>
+    <tags>
+        <tag name="FTP"/>
+    </tags>
+    <workout>
+        <Warmup Duration="300" PowerLow="0.40" PowerHigh="0.55">
+            <textevent timeoffset="0" message="Easy warm up, 5 minutes. The ramp starts after."/>
+        </Warmup>
+        <SteadyState Duration="60" Power="0.60">
+            <textevent timeoffset="0" message="+5% every minute. Keep going until you can't hold the target, then press Stop."/>
+        </SteadyState>
+        <SteadyState Duration="60" Power="0.65"/>
+        <SteadyState Duration="60" Power="0.70"/>
+        <SteadyState Duration="60" Power="0.75"/>
+        <SteadyState Duration="60" Power="0.80"/>
+        <SteadyState Duration="60" Power="0.85"/>
+        <SteadyState Duration="60" Power="0.90"/>
+        <SteadyState Duration="60" Power="0.95"/>
+        <SteadyState Duration="60" Power="1.00"/>
+        <SteadyState Duration="60" Power="1.05"/>
+        <SteadyState Duration="60" Power="1.10"/>
+        <SteadyState Duration="60" Power="1.15"/>
+        <SteadyState Duration="60" Power="1.20"/>
+        <SteadyState Duration="60" Power="1.25"/>
+        <SteadyState Duration="60" Power="1.30"/>
+        <SteadyState Duration="60" Power="1.35"/>
+        <SteadyState Duration="60" Power="1.40"/>
+        <SteadyState Duration="60" Power="1.45"/>
+        <SteadyState Duration="60" Power="1.50"/>
+        <SteadyState Duration="60" Power="1.55"/>
+        <SteadyState Duration="60" Power="1.60"/>
+        <Cooldown Duration="300" PowerLow="0.50" PowerHigh="0.35"/>
+    </workout>
+</workout_file>
