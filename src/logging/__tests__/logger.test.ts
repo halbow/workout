@@ -50,6 +50,17 @@ describe('Logger', () => {
     expect(messages().filter((m) => m === 'a' || m === 'b')).toEqual(['a', 'b'])
   })
 
+  it('gives observers every entry, whatever the level', () => {
+    const logger = new Logger(() => 0)
+    const seen: string[] = []
+    const stop = logger.observe((e) => seen.push(e.message))
+    logger.log('debug', 'test', 'bike data')
+    logger.log('info', 'test', 'command sent')
+    stop()
+    logger.log('info', 'test', 'after stop')
+    expect(seen).toEqual(['bike data', 'command sent'])
+  })
+
   it('keeps working when a sink throws', () => {
     const logger = new Logger()
     logger.addSink(() => {

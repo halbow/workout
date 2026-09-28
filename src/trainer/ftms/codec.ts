@@ -125,3 +125,86 @@ export const MachineStatus = {
 export function decodeMachineStatus(view: DataView): number | undefined {
   return view.byteLength > 0 ? view.getUint8(0) : undefined
 }
+
+/** Fitness Machine Feature bits, in bit order. */
+export const MACHINE_FEATURES = [
+  'Average speed',
+  'Cadence',
+  'Total distance',
+  'Inclination',
+  'Elevation gain',
+  'Pace',
+  'Step count',
+  'Resistance level',
+  'Stride count',
+  'Expended energy',
+  'Heart rate',
+  'Metabolic equivalent',
+  'Elapsed time',
+  'Remaining time',
+  'Power measurement',
+  'Force on belt and power output',
+  'User data retention',
+] as const
+
+/** Target Setting Feature bits, in bit order. */
+export const TARGET_SETTING_FEATURES = [
+  'Speed target',
+  'Inclination target',
+  'Resistance target',
+  'Power target (ERG)',
+  'Heart rate target',
+  'Targeted expended energy',
+  'Targeted step number',
+  'Targeted stride number',
+  'Targeted distance',
+  'Targeted training time',
+  'Targeted time in two HR zones',
+  'Targeted time in three HR zones',
+  'Targeted time in five HR zones',
+  'Indoor bike simulation (SIM)',
+  'Wheel circumference',
+  'Spin down control',
+  'Targeted cadence',
+] as const
+
+export interface FeatureFlag {
+  name: string
+  supported: boolean
+}
+
+export interface FeatureList {
+  machine: FeatureFlag[]
+  targetSettings: FeatureFlag[]
+}
+
+/** Every bit of Fitness Machine Feature (0x2ACC), named. */
+export function decodeFeatureList(view: DataView): FeatureList {
+  const word = (offset: number) =>
+    view.byteLength >= offset + 4 ? view.getUint32(offset, true) : 0
+  const flags = (names: readonly string[], bits: number) =>
+    names.map((name, bit) => ({ name, supported: (bits & (1 << bit)) !== 0 }))
+  return {
+    machine: flags(MACHINE_FEATURES, word(0)),
+    targetSettings: flags(TARGET_SETTING_FEATURES, word(4)),
+  }
+}
+
+export interface SupportedRange {
+  min: number
+  max: number
+  increment: number
+}
+
+/**
+ * Supported Power Range (0x2AD8, watts) and Supported Resistance Level Range (0x2AD6,
+ * unitless, in tenths: pass `10`): sint16 min, sint16 max, uint16 increment.
+ */
+export function decodeSupportedRange(view: DataView, divisor = 1): SupportedRange | undefined {
+  if (view.byteLength < 6) return undefined
+  return {
+    min: view.getInt16(0, true) / divisor,
+    max: view.getInt16(2, true) / divisor,
+    increment: view.getUint16(4, true) / divisor,
+  }
+}

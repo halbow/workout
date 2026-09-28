@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { logRecorder, type LogSession } from '../../storage/logs'
+import { BleDebugPanel } from '../components/BleDebugPanel'
 import { downloadText } from '../download'
 
 type LogLevel = 'info' | 'debug'
@@ -16,6 +17,7 @@ export function Settings({ ftp, logLevel, onLogLevelChange, onSave, onBack }: Pr
   const [value, setValue] = useState(ftp?.toString() ?? '')
   const parsed = Number(value)
   const valid = Number.isInteger(parsed) && parsed >= 50 && parsed <= 600
+  const [debug, toggleDebug] = useDebugShortcut()
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -27,7 +29,7 @@ export function Settings({ ftp, logLevel, onLogLevelChange, onSave, onBack }: Pr
       <button className="btn btn-ghost back" onClick={onBack}>
         ← Back
       </button>
-      <h1>Settings</h1>
+      <h1 onClick={toggleDebug}>Settings</h1>
       <form className="settings-form" onSubmit={submit}>
         <label htmlFor="ftp">FTP (watts)</label>
         <input
@@ -46,8 +48,46 @@ export function Settings({ ftp, logLevel, onLogLevelChange, onSave, onBack }: Pr
         </button>
       </form>
       <LogPanel level={logLevel} onLevelChange={onLogLevelChange} />
+      {debug && <BleDebugPanel />}
     </section>
   )
+}
+
+const DEBUG_WORD = 'ble'
+const DEBUG_TAPS = 5
+const TAP_WINDOW_MS = 2000
+
+/**
+ * The Bluetooth debug panel is hidden: typing `ble` (outside a field) toggles it, and so does
+ * tapping the title 5 times, for tablets. Returns the title click handler.
+ */
+function useDebugShortcut(): [boolean, () => void] {
+  const [open, setOpen] = useState(false)
+  const taps = useRef<number[]>([])
+
+  useEffect(() => {
+    let typed = ''
+    const onKey = (e: KeyboardEvent) => {
+      const inField =
+        e.target instanceof Element && e.target.closest('input, select, textarea') !== null
+      if (inField || e.metaKey || e.ctrlKey || e.altKey) return
+      typed = (typed + e.key.toLowerCase()).slice(-DEBUG_WORD.length)
+      if (typed === DEBUG_WORD) setOpen((o) => !o)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const onTitleClick = () => {
+    const now = Date.now()
+    taps.current = [...taps.current.filter((t) => now - t < TAP_WINDOW_MS), now]
+    if (taps.current.length >= DEBUG_TAPS) {
+      taps.current = []
+      setOpen((o) => !o)
+    }
+  }
+
+  return [open, onTitleClick]
 }
 
 function LogPanel({

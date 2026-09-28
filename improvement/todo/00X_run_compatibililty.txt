@@ -1,0 +1,6 @@
+# RUnning
+
+
+Next to the biking, we now allo the user to choose biking/running in the app.
+The user can buidl running workout with the speed, interval etc
+inclinaistion ont he run, etc if possible

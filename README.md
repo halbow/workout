@@ -40,6 +40,14 @@ The log level is set in ⚙︎ → **Logs**:
 
 Each error also writes the 50 entries before it and the 50 after it, debug ones included, so there is context to debug. Everything is also printed to the browser console.
 
+### Bluetooth debug panel
+
+Hidden in ⚙︎: type `ble` (outside a field), or tap the **Settings** title 5 times. Do it again to hide it. It has:
+
+- **Trainer**: status, and pair/disconnect the same way as the header button.
+- **Supported features**: picks a device and reads it without sending any command: device information, battery, FTMS machine and target setting features, supported power and resistance ranges, and every standard service and characteristic. Supported features the app doesn't use yet (e.g. SIM mode, resistance) are marked **not used**. Tick **Show every Bluetooth device** to inspect a device that doesn't advertise FTMS.
+- **Live logs**: every entry as it happens, debug ones included whatever the log level, with pause and clear.
+
 ## Scripts
 
 | Command | What it does |

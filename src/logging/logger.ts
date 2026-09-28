@@ -30,6 +30,7 @@ export class Logger {
   level: 'debug' | 'info' = 'info'
 
   private readonly sinks = new Set<LogSink>()
+  private readonly observers = new Set<LogSink>()
   private history: LogEntry[] = []
   private contextRemaining = 0
 
@@ -38,6 +39,12 @@ export class Logger {
   addSink(sink: LogSink): () => void {
     this.sinks.add(sink)
     return () => this.sinks.delete(sink)
+  }
+
+  /** Unlike a sink, an observer gets every entry, whatever the level. For live views. */
+  observe(observer: LogSink): () => void {
+    this.observers.add(observer)
+    return () => this.observers.delete(observer)
   }
 
   scope(scope: string) {
@@ -71,6 +78,7 @@ export class Logger {
 
     this.history.push(entry)
     if (this.history.length > CONTEXT_SIZE) this.history.shift()
+    notify(this.observers, entry)
   }
 
   private marker(message: string) {
@@ -78,12 +86,16 @@ export class Logger {
   }
 
   private write(entry: LogEntry) {
-    for (const sink of this.sinks) {
-      try {
-        sink(entry)
-      } catch {
-        // A broken sink must not break the app.
-      }
+    notify(this.sinks, entry)
+  }
+}
+
+function notify(sinks: Set<LogSink>, entry: LogEntry) {
+  for (const sink of sinks) {
+    try {
+      sink(entry)
+    } catch {
+      // A broken sink must not break the app.
     }
   }
 }

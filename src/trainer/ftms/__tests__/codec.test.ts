@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   decodeControlPointResponse,
+  decodeFeatureList,
   decodeFeatures,
   decodeIndoorBikeData,
   decodeMachineStatus,
+  decodeSupportedRange,
   encodeRequestControl,
   encodeReset,
   encodeSetTargetPower,
@@ -89,6 +91,51 @@ describe('FTMS codec: responses and data', () => {
   it('reads the power target supported flag', () => {
     expect(decodeFeatures(view(0, 0, 0, 0, 0x08, 0, 0, 0)).powerTargetSupported).toBe(true)
     expect(decodeFeatures(view(0xff, 0xff, 0, 0, 0x02, 0, 0, 0)).powerTargetSupported).toBe(false)
+  })
+
+  it('names every feature bit', () => {
+    // KICKR Core: average speed, cadence, total distance, resistance, expended energy, power;
+    // targets: resistance, power, indoor bike simulation, wheel circumference, spin down.
+    const { machine, targetSettings } = decodeFeatureList(view(0x87, 0x42, 0, 0, 0x0c, 0xe0, 0, 0))
+    const supported = (flags: { name: string; supported: boolean }[]) =>
+      flags.filter((f) => f.supported).map((f) => f.name)
+    expect(supported(machine)).toEqual([
+      'Average speed',
+      'Cadence',
+      'Total distance',
+      'Resistance level',
+      'Expended energy',
+      'Power measurement',
+    ])
+    expect(supported(targetSettings)).toEqual([
+      'Resistance target',
+      'Power target (ERG)',
+      'Indoor bike simulation (SIM)',
+      'Wheel circumference',
+      'Spin down control',
+    ])
+  })
+
+  it('treats a short feature value as no target settings', () => {
+    const { machine, targetSettings } = decodeFeatureList(view(0x02, 0, 0, 0))
+    expect(machine.find((f) => f.name === 'Cadence')?.supported).toBe(true)
+    expect(targetSettings.every((f) => !f.supported)).toBe(true)
+  })
+
+  it('decodes supported ranges', () => {
+    // 0 to 2000 W by 1 W
+    expect(decodeSupportedRange(view(0x00, 0x00, 0xd0, 0x07, 0x01, 0x00))).toEqual({
+      min: 0,
+      max: 2000,
+      increment: 1,
+    })
+    // resistance 0 to 100.0 by 1.0, in 0.1 units
+    expect(decodeSupportedRange(view(0x00, 0x00, 0xe8, 0x03, 0x0a, 0x00), 10)).toEqual({
+      min: 0,
+      max: 100,
+      increment: 1,
+    })
+    expect(decodeSupportedRange(view(0x00, 0x00))).toBeUndefined()
   })
 
   it('reads the machine status op code', () => {
