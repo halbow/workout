@@ -1,6 +1,7 @@
 import { useState, type DragEvent } from 'react'
 import type { SavedWorkout } from '../../storage/workouts'
 import { formatDuration, parseZwo, totalDuration } from '../../workout'
+import { TrashIcon } from '../components/TrashIcon'
 
 interface Props {
   workouts: SavedWorkout[]
@@ -112,7 +113,7 @@ export function Library({ workouts, onImport, onCreate, onOpen, onDelete }: Prop
                   if (confirm(`Delete "${workout.name}"?`)) onDelete(id)
                 }}
               >
-                🗑
+                <TrashIcon />
               </button>
             )}
           </li>

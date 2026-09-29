@@ -14,6 +14,7 @@ import {
   type ZwoDocument,
 } from '../../workout'
 import { PowerProfileChart } from '../components/PowerProfileChart'
+import { TrashIcon } from '../components/TrashIcon'
 
 interface Props {
   /** The workout to edit. Without it, the editor starts empty. */
@@ -220,7 +221,7 @@ export function WorkoutEditor({ initial, onSave, onBack }: Props) {
                   aria-label={`Delete ${LABELS[item.block.kind]}`}
                   onClick={() => remove(item.id)}
                 >
-                  🗑
+                  <TrashIcon />
                 </button>
               </span>
             </div>
