@@ -1,3 +1,4 @@
+import type { HeartRateHub } from '../heart-rate'
 import { log as logger } from '../logging'
 import type { Trainer, TrainerData, TrainerEvent } from '../trainer/types'
 import {
@@ -31,13 +32,15 @@ export interface RunnerSnapshot {
   targetPower?: number
   nextSegment?: Segment
   activeTextEvent?: TextEvent
-  /** Last reading from the trainer. */
+  /** Last reading from the trainer, with the heart rate picked by the hub when there is one. */
   live: TrainerData
 }
 
 export interface WorkoutRunnerOptions {
   workout: Workout
   trainer: Trainer
+  /** Heart rate from every source. Without it, the trainer's heart rate is used. */
+  heartRate?: HeartRateHub
   /** Watts. */
   ftp: number
   clock?: Clock
@@ -52,6 +55,7 @@ export interface WorkoutRunnerOptions {
 export class WorkoutRunner {
   private readonly workout: Workout
   private readonly trainer: Trainer
+  private readonly heartRate?: HeartRateHub
   private readonly ftp: number
   private readonly clock: Clock
   private readonly tickMs: number
@@ -74,10 +78,12 @@ export class WorkoutRunner {
   private snapshot: RunnerSnapshot
   private readonly listeners = new Set<() => void>()
   private unsubscribeTrainer?: () => void
+  private unsubscribeHeartRate?: () => void
 
   constructor(options: WorkoutRunnerOptions) {
     this.workout = options.workout
     this.trainer = options.trainer
+    this.heartRate = options.heartRate
     this.ftp = options.ftp
     this.clock = options.clock ?? realClock
     this.tickMs = options.tickMs ?? 250
@@ -88,17 +94,20 @@ export class WorkoutRunner {
   }
 
   /**
-   * Starts listening to the trainer (live data, disconnects). Returns a function that stops the
+   * Starts listening to the trainer (live data, disconnects) and heart rate. Returns a function that stops the
    * workout and detaches. Kept out of the constructor so React can own it in an effect.
    */
   attach(): () => void {
     this.unsubscribeTrainer ??= this.trainer.subscribe(this.onTrainerEvent)
+    this.unsubscribeHeartRate ??= this.heartRate?.subscribe(() => this.publish())
     return () => {
       this.stop()
       this.cancelTick?.()
       this.cancelTick = undefined
       this.unsubscribeTrainer?.()
       this.unsubscribeTrainer = undefined
+      this.unsubscribeHeartRate?.()
+      this.unsubscribeHeartRate = undefined
     }
   }
 
@@ -254,7 +263,7 @@ export class WorkoutRunner {
         segment && segment.kind !== 'free' ? this.targetFor(segment, position.elapsed) : undefined,
       nextSegment: position ? this.workout.segments[position.index + 1] : undefined,
       activeTextEvent: textEventAt(this.workout, elapsed),
-      live: this.live,
+      live: this.heartRate ? { ...this.live, heartRate: this.heartRate.current() } : this.live,
     }
   }
 }

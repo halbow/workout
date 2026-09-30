@@ -8,14 +8,17 @@ import {
   updateWorkout,
   type SavedWorkout,
 } from '../storage/workouts'
+import { HeartRateHub } from '../heart-rate'
 import { parseZwoDocument, serializeZwo, type ZwoDocument } from '../workout'
 import { Header } from './components/Header'
+import { HeartRateMonitorContext } from './hooks/useHeartRateMonitor'
 import { TrainerSessionContext } from './hooks/useTrainer'
 import { Library } from './screens/Library'
 import { Ride } from './screens/Ride'
 import { Settings } from './screens/Settings'
 import { WorkoutEditor } from './screens/WorkoutEditor'
 import { WorkoutDetail } from './screens/WorkoutDetail'
+import { HeartRateMonitorSession } from './heart-rate-monitor-session'
 import { TrainerSession } from './trainer-session'
 
 type Route =
@@ -28,7 +31,9 @@ type Route =
 
 export function App() {
   const [settings, setSettings] = useState<SettingsData>(loadSettings)
-  const [session] = useState(() => new TrainerSession(settings.simulatedTrainer))
+  const [heartRate] = useState(() => new HeartRateHub())
+  const [session] = useState(() => new TrainerSession(settings.simulatedTrainer, heartRate))
+  const [hrm] = useState(() => new HeartRateMonitorSession(settings.simulatedTrainer, heartRate))
   const [workouts, setWorkouts] = useState<SavedWorkout[]>([])
   const [route, setRoute] = useState<Route>(() =>
     settings.ftp === undefined
@@ -134,18 +139,21 @@ export function App() {
 
   return (
     <TrainerSessionContext.Provider value={session}>
-      <div className="app">
-        <Header
-          onHome={home}
-          onSettings={() => setRoute({ screen: 'settings', back: route })}
-          locked={route.screen === 'ride'}
-          onSimulatedChange={(simulatedTrainer) => {
-            updateSettings({ simulatedTrainer })
-            void session.setSimulated(simulatedTrainer)
-          }}
-        />
-        <main>{screen}</main>
-      </div>
+      <HeartRateMonitorContext.Provider value={hrm}>
+        <div className="app">
+          <Header
+            onHome={home}
+            onSettings={() => setRoute({ screen: 'settings', back: route })}
+            locked={route.screen === 'ride'}
+            onSimulatedChange={(simulatedTrainer) => {
+              updateSettings({ simulatedTrainer })
+              void session.setSimulated(simulatedTrainer)
+              void hrm.setSimulated(simulatedTrainer)
+            }}
+          />
+          <main>{screen}</main>
+        </div>
+      </HeartRateMonitorContext.Provider>
     </TrainerSessionContext.Provider>
   )
 }

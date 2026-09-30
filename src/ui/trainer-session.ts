@@ -1,3 +1,4 @@
+import type { HeartRateHub } from '../heart-rate'
 import { FtmsTrainer } from '../trainer/ftms/ftms-trainer'
 import { MockTrainer } from '../trainer/mock-trainer'
 import type { Trainer, TrainerData, TrainerStatus } from '../trainer/types'
@@ -18,7 +19,10 @@ export class TrainerSession {
   private readonly listeners = new Set<() => void>()
   private unsubscribe: () => void
 
-  constructor(simulated: boolean) {
+  constructor(
+    simulated: boolean,
+    private readonly heartRate: HeartRateHub,
+  ) {
     this.trainer = createTrainer(simulated)
     this.snapshot = { status: this.trainer.status, simulated, live: { timestamp: 0 } }
     this.unsubscribe = this.attach()
@@ -66,8 +70,11 @@ export class TrainerSession {
 
   private attach() {
     return this.trainer.subscribe((event) => {
-      if (event.type === 'data') this.update({ live: event.data })
-      else if (event.type === 'status') {
+      if (event.type === 'data') {
+        const { heartRate, timestamp } = event.data
+        if (heartRate !== undefined) this.heartRate.push('trainer', { bpm: heartRate, timestamp })
+        this.update({ live: event.data })
+      } else if (event.type === 'status') {
         this.update({ status: event.status, name: this.trainer.name, error: event.error })
       } else this.update({ error: event.message })
     })

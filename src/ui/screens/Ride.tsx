@@ -5,6 +5,7 @@ import { logRecorder } from '../../storage/logs'
 import { formatDuration, type Workout } from '../../workout'
 import { BigMetric } from '../components/BigMetric'
 import { PowerProfileChart } from '../components/PowerProfileChart'
+import { useHeartRateMonitor } from '../hooks/useHeartRateMonitor'
 import { useRunner } from '../hooks/useRunner'
 import { useTrainer } from '../hooks/useTrainer'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -18,7 +19,10 @@ interface Props {
 
 export function Ride({ workout, ftp, onExit }: Props) {
   const { session } = useTrainer()
-  const [runner] = useState(() => new WorkoutRunner({ workout, trainer: session.trainer, ftp }))
+  const { session: hrm } = useHeartRateMonitor()
+  const [runner] = useState(
+    () => new WorkoutRunner({ workout, trainer: session.trainer, heartRate: hrm.hub, ftp }),
+  )
   useEffect(() => runner.attach(), [runner])
   return <RideView runner={runner} workout={workout} ftp={ftp} onExit={onExit} />
 }
@@ -26,6 +30,7 @@ export function Ride({ workout, ftp, onExit }: Props) {
 function RideView({ runner, workout, ftp, onExit }: Props & { runner: WorkoutRunner }) {
   const s = useRunner(runner)
   const { session, status, ready } = useTrainer()
+  const hrm = useHeartRateMonitor()
   const active = s.state === 'running' || s.state === 'paused'
   useWakeLock(s.state === 'running')
 
@@ -51,6 +56,7 @@ function RideView({ runner, workout, ftp, onExit }: Props & { runner: WorkoutRun
     log.log('info', 'ride', `workout "${workout.name}" started`, {
       ftp,
       trainer: session.trainer.name,
+      heartRateMonitor: hrm.status === 'connected' ? hrm.session.monitor.name : undefined,
     })
     runner.start()
   }
@@ -79,6 +85,21 @@ function RideView({ runner, workout, ftp, onExit }: Props & { runner: WorkoutRun
             </button>
           ) : ready ? null : (
             <button className="btn btn-primary" onClick={() => void session.reconnect()}>
+              Reconnect
+            </button>
+          )}
+        </div>
+      )}
+
+      {hrm.dropped && (
+        <div className="banner banner-warn">
+          <span>The heart rate strap disconnected.</span>
+          {hrm.status === 'connecting' ? (
+            <button className="btn" disabled>
+              Reconnecting…
+            </button>
+          ) : (
+            <button className="btn btn-secondary" onClick={() => void hrm.session.reconnect()}>
               Reconnect
             </button>
           )}

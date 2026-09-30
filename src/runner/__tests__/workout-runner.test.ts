@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { HeartRateHub } from '../../heart-rate'
 import { MockTrainer } from '../../trainer/mock-trainer'
 import type { Workout } from '../../workout'
 import { FakeClock } from '../clock'
@@ -189,5 +190,17 @@ describe('WorkoutRunner', () => {
     expect(runner.getSnapshot()).toBe(a)
     runner.start()
     expect(runner.getSnapshot()).not.toBe(a)
+  })
+
+  it('shows the heart rate picked by the hub', () => {
+    const heartRate = new HeartRateHub()
+    const withHr = new WorkoutRunner({ workout, trainer, ftp: FTP, clock, heartRate })
+    const detachHr = withHr.attach()
+    expect(withHr.getSnapshot().live.heartRate).toBeUndefined()
+    heartRate.push('sensor', { bpm: 142, timestamp: Date.now() })
+    expect(withHr.getSnapshot().live.heartRate).toBe(142)
+    detachHr()
+    heartRate.push('sensor', { bpm: 150, timestamp: Date.now() })
+    expect(withHr.getSnapshot().live.heartRate).toBe(142)
   })
 })
