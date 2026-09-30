@@ -14,6 +14,7 @@ import { Header } from './components/Header'
 import { HeartRateMonitorContext } from './hooks/useHeartRateMonitor'
 import { TrainerSessionContext } from './hooks/useTrainer'
 import { Library } from './screens/Library'
+import { Pair } from './screens/Pair'
 import { Ride } from './screens/Ride'
 import { Settings } from './screens/Settings'
 import { WorkoutEditor } from './screens/WorkoutEditor'
@@ -22,6 +23,7 @@ import { HeartRateMonitorSession } from './heart-rate-monitor-session'
 import { TrainerSession } from './trainer-session'
 
 type Route =
+  | { screen: 'pair' }
   | { screen: 'library' }
   /** Without an id, creates a new workout. */
   | { screen: 'editor'; id?: string }
@@ -37,8 +39,8 @@ export function App() {
   const [workouts, setWorkouts] = useState<SavedWorkout[]>([])
   const [route, setRoute] = useState<Route>(() =>
     settings.ftp === undefined
-      ? { screen: 'settings', back: { screen: 'library' } }
-      : { screen: 'library' },
+      ? { screen: 'settings', back: { screen: 'pair' } }
+      : { screen: 'pair' },
   )
 
   useEffect(() => {
@@ -73,6 +75,11 @@ export function App() {
   const back = () =>
     setRoute(current ? { screen: 'detail', id: current.id } : { screen: 'library' })
   const home = () => setRoute({ screen: 'library' })
+  const onSimulatedChange = (simulatedTrainer: boolean) => {
+    updateSettings({ simulatedTrainer })
+    void session.setSimulated(simulatedTrainer)
+    void hrm.setSimulated(simulatedTrainer)
+  }
 
   let screen
   if (route.screen === 'settings') {
@@ -125,6 +132,8 @@ export function App() {
         onSettings={() => setRoute({ screen: 'settings', back: route })}
       />
     )
+  } else if (route.screen === 'pair') {
+    screen = <Pair onStart={home} onSimulatedChange={onSimulatedChange} />
   } else {
     screen = (
       <Library
@@ -142,14 +151,10 @@ export function App() {
       <HeartRateMonitorContext.Provider value={hrm}>
         <div className="app">
           <Header
-            onHome={home}
+            showStatus={route.screen !== 'pair'}
+            onPair={() => setRoute({ screen: 'pair' })}
             onSettings={() => setRoute({ screen: 'settings', back: route })}
             locked={route.screen === 'ride'}
-            onSimulatedChange={(simulatedTrainer) => {
-              updateSettings({ simulatedTrainer })
-              void session.setSimulated(simulatedTrainer)
-              void hrm.setSimulated(simulatedTrainer)
-            }}
           />
           <main>{screen}</main>
         </div>

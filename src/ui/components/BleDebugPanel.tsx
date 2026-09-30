@@ -35,7 +35,9 @@ function ConnectionSection() {
       </p>
       {error && <p className="message-error">{error}</p>}
       {(isWebBluetoothAvailable() || simulated) && <PairButton />}
-      <p className="hint">Pairs the same way as the header button. Every step shows in the logs.</p>
+      <p className="hint">
+        Pairs the same way as the pairing screen. Every step shows in the logs.
+      </p>
     </div>
   )
 }
