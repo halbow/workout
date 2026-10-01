@@ -1,7 +1,0 @@
-# Cadence
-
-As a user, I'm able to set the cadence to use in the workout.
-
-
-
-To investigate: does this needs to be sent to the device, or shoudl we simply poll and give a status to the user abotu whether is on the rigth path or not

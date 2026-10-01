@@ -1,4 +1,0 @@
-# Ride history
-
-
-As a user I am able to see the historye of my rides that I previously completed:
